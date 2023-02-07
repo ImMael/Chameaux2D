@@ -1,0 +1,15 @@
+public class PawnModel {
+    PlayerChar Player { get; set; }
+    int Position { get; set; }
+    bool IsInGoal { get; set; }
+    bool IsInStart { get; set; }
+    bool IsInSafeZone { get; set; }
+
+    public PawnModel(PlayerChar player, int position, bool isInGoal, bool isInStart, bool isInSafeZone) {
+        Player = player;
+        Position = position;
+        IsInGoal = isInGoal;
+        IsInStart = isInStart;
+        IsInSafeZone = isInSafeZone;
+    }
+}

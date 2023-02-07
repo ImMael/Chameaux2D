@@ -5,6 +5,8 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
 
+    [SerializeField] private Pawn[] pawns;
+
     bool waitForRoll = true;
 
     int RollDice(){          

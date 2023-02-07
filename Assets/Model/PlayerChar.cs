@@ -5,5 +5,6 @@ public class PlayerChar {
     public PlayerChar(string color, int position) {
         Color = color;
         Position = position;
+
     }
 }
