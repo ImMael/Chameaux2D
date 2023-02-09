@@ -9,6 +9,7 @@ public class Dice : MonoBehaviour
 
     public int RollDice(){          
         int dice = Random.Range(1, 7);
+        updateRender(dice);
         return dice;
     }
 

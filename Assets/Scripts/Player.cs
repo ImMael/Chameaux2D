@@ -8,27 +8,33 @@ public class Player : MonoBehaviour
     [SerializeField] private Pawn[] pawns;
     [SerializeField] private Dice dice;
 
-    bool waitForRoll = true;
+    public string Color { get; set; }
+    public int startPosition { get; set; }
+    public int currentPosition { get; set; }
+    public Position spawnPosition { get; set; }
+
+    public int RollDice() {
+        return dice.RollDice();
+    }
+
+    public Pawn[] getPawns() {
+        return pawns;
+    }
+
+    public bool checkifRollisSix(int currentDice){
+        return dice.checkifRollisSix(currentDice);
+    }
+
+
 
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("Press Space to roll the dice");
         dice = GameObject.Find("Dice").GetComponent<Dice>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (waitForRoll && Input.GetKeyDown(KeyCode.Space)){
-            int diceNumber = dice.RollDice();
-            Debug.Log("Dice: " + diceNumber);
-            dice.updateRender(diceNumber);
-            waitForRoll = dice.checkifRollisSix(diceNumber);
-        }
-
-        if (!waitForRoll && Input.GetKeyDown(KeyCode.Space)){
-            Debug.Log("You can't roll the dice anymore");
-        }
     }
 }
