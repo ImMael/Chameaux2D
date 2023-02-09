@@ -75,7 +75,7 @@ public class GameScript : MonoBehaviour
         }
     }
 
-    public void movePawnToStartCase(Player player, Pawn pawn) {
+    public void movePawnToStartCase(Pawn pawn) {
         pawn.moveToCase(cases[pawn.startPosition]);
         pawn.currentPosition = pawn.startPosition;
         pawn.isPawnInSpawn = false;
@@ -116,11 +116,18 @@ public class GameScript : MonoBehaviour
         Debug.Log("Clicked pawn: " + clickedPawn);
             if(player.checkifAllPawnsAreInSpawn()) {
                 if(player.checkifRollisSix(dice)) {
-                    movePawnToStartCase(player, clickedPawn);
+                    movePawnToStartCase(clickedPawn);
                 } else {
                     clickedPawn.callNot6();
                 }
-            } else {
+            } else if ( clickedPawn.isPawnInSpawn ) {
+                if(player.checkifRollisSix(dice)) {
+                    movePawnToStartCase(clickedPawn);
+                } else {
+                    clickedPawn.callNot6();
+                }
+            } 
+            else {
                 movePawn(player, dice, clickedPawn);
             }
             if(currentRoll == 6) {
