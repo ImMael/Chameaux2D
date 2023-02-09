@@ -25,6 +25,30 @@ public class Player : MonoBehaviour
         return dice == 6 ? true : false;
     }
 
+    public bool checkifPawnIsInSpawn(Pawn pawn){
+        return pawn.isPawnInSpawn;
+    }
+
+    public bool checkIfAnyPawnIsInSpawn(){
+        bool anyPawnInSpawn = false;
+        foreach(Pawn pawn in pawns) {
+            if(pawn.isPawnInSpawn) {
+                anyPawnInSpawn = true;
+            }
+        }
+        return anyPawnInSpawn;
+    }
+
+    public bool checkifAllPawnsAreInSpawn(){
+        bool allPawnsInSpawn = true;
+        foreach(Pawn pawn in pawns) {
+            if(!pawn.isPawnInSpawn) {
+                allPawnsInSpawn = false;
+            }
+        }
+        return allPawnsInSpawn;
+    }
+
     // Start is called before the first frame update
     void Start()
     {

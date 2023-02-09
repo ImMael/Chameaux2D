@@ -4,11 +4,34 @@ using UnityEngine;
 
 public class GameScript : MonoBehaviour
 {
+    readonly Position[] RED_SPAWN_POSITION = new Position[] {
+        new Position((float)3, (float)6, (float)-1),
+        new Position((float)5.80, (float)6, (float)-1),
+        new Position((float)5.80, (float)3, (float)-1),
+        new Position((float)3, (float)3, (float)-1)
+    };
 
-    readonly Position RED_SPAWN_POSITION = new Position((float)3, (float)6, (float)-1);
-    readonly Position YELLOW_SPAWN_POSITION = new Position((float)3, (float)-3, (float)-1);
-    readonly Position GREEN_SPAWN_POSITION = new Position((float)-3, (float)-3, (float)-1);
-    readonly Position BLUE_SPAWN_POSITION = new Position((float)-3, (float)6,(float)-1);
+    readonly Position[] YELLOW_SPAWN_POSITION = new Position[] {
+        new Position((float)3, (float)-3, (float)-1),
+        new Position((float)6, (float)-3, (float)-1),
+        new Position((float)6, (float)-6, (float)-1),
+        new Position((float)3, (float)-6, (float)-1)
+    };
+
+
+    readonly Position[] GREEN_SPAWN_POSITION = new Position[] {
+        new Position((float)-3, (float)-3, (float)-1),
+        new Position((float)-6, (float)-3, (float)-1),
+        new Position((float)-6, (float)-6, (float)-1),
+        new Position((float)-3, (float)-6, (float)-1)
+    };
+
+    readonly Position[] BLUE_SPAWN_POSITION = new Position[] {
+        new Position((float)-3, (float)6,(float)-1),
+        new Position((float)-6, (float)6, (float)-1),
+        new Position((float)-6, (float)3, (float)-1),
+        new Position((float)-3, (float)3, (float)-1)
+    };
 
     const int RED_START_CASE = 0;
     const int YELLOW_START_CASE = 14;
@@ -18,26 +41,31 @@ public class GameScript : MonoBehaviour
     bool isGameRunning = false;
     int startingPlayer = 0;
 
+    public Pawn clickedPawn { get; set; }
+
+    private int currentRoll { get; set; }
+    bool waitingForClick = false;
+
     [SerializeField] Case[] cases;
     [SerializeField] Player[] players;
 
-    
-
     public void startTurn(Player player) {
-        int dice = player.RollDice();
-        if(player.getPawns()[0].isPawnInSpawn) {
-            if(player.checkifRollisSix(dice)) {
-                movePawnToStartCase(player);
-            } else {
-                player.getPawns()[0].callNot6();
-            }
-        } else {
-            movePawn(player, dice);
-        }
-
-        Debug.Log(player + " rolled: " + dice);
-        getStartingPlayer();
+        currentRoll = player.RollDice();
+        Debug.Log(player + " rolled: " + currentRoll);
+        if ((player.checkifAllPawnsAreInSpawn()) && (!player.checkifRollisSix(currentRoll))) { player.getPawns()[0].callNot6(); getStartingPlayer(); return; }
+        setPawnsInteractable(player);
+        waitingForClick = true;
+        WaitUntil wait = new WaitUntil(() => clickedPawn != null);
     }
+
+
+    public void setPawnsInteractable(Player player, bool interactable = true) {
+        Pawn[] pawns = player.getPawns();
+        foreach(Pawn pawn in pawns) {
+            pawn.isInteractable = interactable;
+        }
+    }
+
 
     public void getStartingPlayer() {
         if(startingPlayer < players.Length - 1) {
@@ -47,51 +75,104 @@ public class GameScript : MonoBehaviour
         }
     }
 
-    public void movePawnToStartCase(Player player) {
-        player.getPawns()[0].moveToCase(cases[player.startPosition]);
-        player.currentPosition = player.startPosition;
-        player.getPawns()[0].isPawnInSpawn = false;
+    public void movePawnToStartCase(Player player, Pawn pawn) {
+        pawn.moveToCase(cases[pawn.startPosition]);
+        pawn.currentPosition = pawn.startPosition;
+        pawn.isPawnInSpawn = false;
     }
 
-    public void movePawn(Player player, int dice) {
-        cases[player.currentPosition].clearCase();
-        int newPosition = player.currentPosition + dice;
+    public void movePawn(Player player, int dice, Pawn pawn) {
+        cases[pawn.currentPosition].clearCase();
+        int newPosition = pawn.currentPosition + dice;
         if(newPosition > 55) {
             newPosition = newPosition - 56;
         }
         if(cases[newPosition].hasPawn) {
             cases[newPosition].pawn.moveToSpawn();
             cases[newPosition].pawn.isPawnInSpawn = true;
-            player.getPawns()[0].moveToCase(cases[newPosition]);
-            player.currentPosition = newPosition;
+            pawn.moveToCase(cases[newPosition]);
+            pawn.currentPosition = newPosition;
         } else {
-            player.getPawns()[0].moveToCase(cases[newPosition]);
-            player.currentPosition = newPosition;
+            pawn.moveToCase(cases[newPosition]);
+            pawn.currentPosition = newPosition;
         }
+    }
+
+
+    IEnumerator WaitForUserClick()
+    {
+        WaitUntil wait = new WaitUntil(() => clickedPawn != null);
+        yield return wait;
+
+        waitingForClick = false;
+
+    }
+
+    public void setClickedPawn(Pawn pawn) {
+        clickedPawn = pawn;
+    }
+
+    private void handlePawnMove(Player player, int dice) {
+        Debug.Log("Clicked pawn: " + clickedPawn);
+            if(player.checkifAllPawnsAreInSpawn()) {
+                if(player.checkifRollisSix(dice)) {
+                    movePawnToStartCase(player, clickedPawn);
+                } else {
+                    clickedPawn.callNot6();
+                }
+            } else {
+                movePawn(player, dice, clickedPawn);
+            }
+            if(currentRoll == 6) {
+                return;
+            } else {
+                getStartingPlayer();
+            }
+            currentRoll = 0;
     }
 
 
     // Start is called before the first frame update
     void Start() 
     {
+
+
+        clickedPawn = null;
+
+
         Debug.Log("Press space to start the game");
         isGameRunning = true;
 
-        players[0].startPosition = RED_START_CASE;
         players[0].Color = "Red";
-        players[0].spawnPosition = RED_SPAWN_POSITION;
+        
+        for(int i = 0; i < players[0].getPawns().Length; i++) {
+            players[0].getPawns()[i].spawnPosition = RED_SPAWN_POSITION[i];
+            players[0].getPawns()[i].startPosition = RED_START_CASE;
+        }
 
-        players[1].startPosition = YELLOW_START_CASE;
+
         players[1].Color = "Yellow";
-        players[1].spawnPosition = YELLOW_SPAWN_POSITION;
 
-        players[2].startPosition = GREEN_START_CASE;
+        for(int i = 0; i < players[1].getPawns().Length; i++) {
+            players[1].getPawns()[i].spawnPosition = YELLOW_SPAWN_POSITION[i];
+            players[1].getPawns()[i].startPosition = YELLOW_START_CASE;
+        }
+
+
         players[2].Color = "Green";
-        players[2].spawnPosition = GREEN_SPAWN_POSITION;
 
-        players[3].startPosition = BLUE_START_CASE;
+        for(int i = 0; i < players[2].getPawns().Length; i++) {
+            players[2].getPawns()[i].spawnPosition = GREEN_SPAWN_POSITION[i];
+            players[2].getPawns()[i].startPosition = GREEN_START_CASE;
+        }
+
+
         players[3].Color = "Blue";
-        players[3].spawnPosition = BLUE_SPAWN_POSITION;
+
+        for(int i = 0; i < players[3].getPawns().Length; i++) {
+            players[3].getPawns()[i].spawnPosition = BLUE_SPAWN_POSITION[i];
+            players[3].getPawns()[i].startPosition = BLUE_START_CASE;
+        }
     }
 
     // Update is called once per frame
@@ -104,36 +185,17 @@ public class GameScript : MonoBehaviour
                 Debug.Log(" ----------------- ");
             }
         }
-       
+
+        if(waitingForClick) {
+            StartCoroutine(WaitForUserClick());
+        } 
+
+        if(clickedPawn) {
+            Debug.Log("Clicked pawn: " + clickedPawn);
+            Debug.Log("Current roll: " + currentRoll);
+            handlePawnMove(players[startingPlayer], currentRoll);
+            clickedPawn = null;
+        }
     }
 
 }
-
-
-
-// for(int i = 0; i < players.Length; i++){
-        //     bool currentPlayerCanPlay = true;
-        //     Player currentPlayer = players[i];
-        //     Debug.Log("Player " + i + " is playing");
-        //     bool firstRoll = true;
-        //     while(currentPlayerCanPlay) {
-        //         Debug.Log("first roll: " + firstRoll);
-        //         if(Input.GetKeyDown(KeyCode.Space)) {
-        //             int dice = currentPlayer.RollDice();
-        //             Debug.Log("Dice rolled: " + dice);
-        //             if(firstRoll && !currentPlayer.checkifRollisSix(dice)) {
-        //                 currentPlayer.getPawns()[0].callNot6();
-        //                 currentPlayerCanPlay = false;
-        //             }
-        //             else {
-        //                 currentCaseIndex += dice;
-        //                 currentPlayer.getPawns()[0].moveToCase(cases[currentCaseIndex]);
-        //                 currentPlayerCanPlay = currentPlayer.checkifRollisSix(dice);
-        //                 if(currentPlayer.checkifRollisSix(dice)) {
-        //                     firstRoll = false;
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         Debug.Log("Player " + i + " has finished his turn");
-        //     }
