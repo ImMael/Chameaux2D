@@ -1,9 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class GameScript : MonoBehaviour
 {
+
+    private TMP_Text textMesh;
+
     readonly Position[] RED_SPAWN_POSITION = new Position[] {
         new Position((float)3, (float)6, (float)-1),
         new Position((float)5.80, (float)6, (float)-1),
@@ -50,12 +54,18 @@ public class GameScript : MonoBehaviour
     [SerializeField] Player[] players;
 
     public void startTurn(Player player) {
+        changeText(player + "'s turn");
         currentRoll = player.RollDice();
         Debug.Log(player + " rolled: " + currentRoll);
         if ((player.checkifAllPawnsAreInSpawn()) && (!player.checkifRollisSix(currentRoll))) { player.getPawns()[0].callNot6(); getStartingPlayer(); return; }
         setPawnsInteractable(player);
         waitingForClick = true;
         WaitUntil wait = new WaitUntil(() => clickedPawn != null);
+    }
+
+    private void changeText(string text) {
+        text = text.Split(' ')[0];
+        textMesh.text = text;
     }
 
 
@@ -145,7 +155,7 @@ public class GameScript : MonoBehaviour
 
 
         clickedPawn = null;
-
+        textMesh = FindObjectOfType<TMP_Text>();
 
         Debug.Log("Press space to start the game");
         isGameRunning = true;
